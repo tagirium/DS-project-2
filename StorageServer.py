@@ -4,16 +4,15 @@ import socket
 
 
 class StorageServer:
-
-	def file_read(self):  # ?
-		path = self.receive_path()
+	def file_read(self, path):
+		self.__send_file(path)
 
 	def file_create(self, path):
 		file = open(path, 'w+')
 		file.close()
 
-	def file_write(self):  # ?
-		self.receive_file()
+	def file_write(self, path):  # ?
+		self.__receive_file(path)
 
 	def file_delete(self, path):
 		if os.path.exists(path):
@@ -37,7 +36,7 @@ class StorageServer:
 	def dir_read(self, path):
 		if os.path.exists(path) and os.path.isdir(path):
 			entries = os.listdir(path)
-			return entries
+			return ' '.join(list(map(str, entries)))
 
 	def dir_make(self, path):
 		if not os.path.exists(path):
@@ -47,13 +46,13 @@ class StorageServer:
 		if os.path.exists(path):
 			os.rmdir(path)
 
-	def receive_file(self):
+	def __receive_file(self, path):
 		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		ssFT.bind((socket.gethostname(), 8756))
 		ssFT.listen(1)
 		while True:
 			(conn, address) = ssFT.accept()
-			text_file = self.receive_path()  # path
+			text_file = path  # path
 
 			# Receive, output and save file
 			with open(text_file, "wb") as fw:
@@ -67,21 +66,17 @@ class StorageServer:
 			break
 		ssFT.close()
 
-	def send_file(self, path):
+	def __send_file(self, path):
 		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ssFT.bind((socket.gethostname(), 8756))
+		ssFT.bind((socket.gethostname(), 8758))
 		ssFT.listen(1)
 		while True:
 			(conn, address) = ssFT.accept()
 			with open(path, 'ab+') as fa:
-				string = b"Append this to file."
-				fa.write(string)
-				fa.seek(0, 0)
-				while True:
-					data = fa.read(1024)
-					conn.send(data)
-					if not data:
-						break
+				l = fa.read(1024)
+				while l:
+					conn.send(l)
+					l = fa.read(1024)
 				fa.close()
 			break
 
@@ -100,6 +95,7 @@ class StorageServer:
 						break
 					else:
 						fw.write(data)
+			break
 		f = open(text_file, 'r+')
 		res = f.read()
 		os.remove(text_file)
