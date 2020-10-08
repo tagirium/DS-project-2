@@ -6,23 +6,19 @@ def receive_command():
 	ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	ssFT.bind((socket.gethostname(), 8755))
 	ssFT.listen(1)
-	cmd_file = 'command.txt'  # path
+	cmd_string = ''
 	while True:
 		(conn, address) = ssFT.accept()
 		# Receive, output and save file
-		with open(cmd_file, "wb") as fw:
-			while True:
-				data = conn.recv(32)
-				if not data:
-					break
-				else:
-					fw.write(data)
+		while True:
+			data = conn.recv(32)
+			if not data:
+				break
+			else:
+				cmd_string += data.decode()
 		break
-	f = open(cmd_file, 'r+')
-	res = f.read()
-	os.remove(cmd_file)
 	ssFT.close()
-	return res
+	return cmd_string
 
 
 def send_file(path):
@@ -32,10 +28,10 @@ def send_file(path):
 	while True:
 		(conn, address) = ssFT.accept()
 		with open(path, 'ab+') as fa:
-			l = fa.read(1024)
+			l = fa.read(32)
 			while l:
 				conn.send(l)
-				l = fa.read(1024)
+				l = fa.read(32)
 			fa.close()
 		break
 	ssFT.close()

@@ -73,10 +73,10 @@ class StorageServer:
 		while True:
 			(conn, address) = ssFT.accept()
 			with open(path, 'ab+') as fa:
-				l = fa.read(1024)
+				l = fa.read(32)
 				while l:
 					conn.send(l)
-					l = fa.read(1024)
+					l = fa.read(32)
 				fa.close()
 			break
 
@@ -84,20 +84,16 @@ class StorageServer:
 		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		ssFT.bind((socket.gethostname(), 8757))
 		ssFT.listen(1)
-		text_file = 'path.txt'  # path
+		path = ''  # path
 		while True:
 			(conn, address) = ssFT.accept()
 			# Receive, output and save file
-			with open(text_file, "wb") as fw:
-				while True:
-					data = conn.recv(32)
-					if not data:
-						break
-					else:
-						fw.write(data)
+			while True:
+				data = conn.recv(32)
+				if not data:
+					break
+				else:
+					path += data.decode()
 			break
-		f = open(text_file, 'r+')
-		res = f.read()
-		os.remove(text_file)
 		ssFT.close()
-		return res
+		return path
