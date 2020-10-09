@@ -181,5 +181,5 @@ class StorageServer:
 
 def ping_from_naming():
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	sock.bind((socket.gethostname(), NAMING_SERVER_PORT))
-	sock.send(CODE_OK.to_bytes())
+	sock.sendto(CODE_OK.to_bytes(), (NAMING_SERVER_IP, NAMING_SERVER_PORT))
+	sock.close()
