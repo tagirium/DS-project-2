@@ -1,6 +1,6 @@
 import os
 import StorageServer as sserver
-
+from codes import *
 
 def main():
     ss = sserver.StorageServer()
@@ -34,6 +34,8 @@ def main():
 
 
 if __name__ == '__main__':
+    if not os.path.exists(STORAGE_SERVER_ROOT_PATH):
+        os.mkdir(STORAGE_SERVER_ROOT_PATH)
     while True:
         main()
 

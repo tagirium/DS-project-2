@@ -54,11 +54,11 @@ class StorageServer:
 
 	def receive_file(self, path):
 		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ss.bind((socket.gethostname(), 8801))
+		ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
 		ss.listen(1)
 		while True:
 			(conn, address) = ss.accept()
-			text_file = path  # path
+			text_file = STORAGE_SERVER_ROOT_PATH + path  # path
 			# Receive, output and save file
 			with open(text_file, "wb") as fw:
 				while True:
