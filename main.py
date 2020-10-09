@@ -1,11 +1,10 @@
-import socket
+import os
 import StorageServer as sserver
-from codes import *
 
 
 def main():
     ss = sserver.StorageServer()
-    cmd = ss.receive_str
+    cmd = ss.receive_str()
     if cmd == 'file_read':
         ss.file_read(path=ss.receive_str)
     elif cmd == 'file_create':
