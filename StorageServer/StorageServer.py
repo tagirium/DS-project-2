@@ -3,6 +3,7 @@ import os
 from StorageServer.codes import *
 import socket
 
+
 class StorageServer:
 
 	def __init__(self, port):
@@ -112,7 +113,7 @@ class StorageServer:
 		else:
 			ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
-			ss.listen(1)
+			ss.listen()
 			while True:
 				(conn, address) = ss.accept()
 				text_file = STORAGE_SERVER_ROOT_PATH + path  # path
@@ -133,7 +134,7 @@ class StorageServer:
 		else:
 			ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
-			ss.listen(1)
+			ss.listen()
 			while True:
 				(conn, address) = ss.accept()
 				with open(path, 'ab+') as fa:
@@ -148,8 +149,8 @@ class StorageServer:
 	def receive_str(self):
 		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
-		ss.listen(1)
-		path = ''  # path
+		ss.listen()
+		string = ''
 		while True:
 			(conn, address) = ss.accept()
 			# Receive, output and save file
@@ -158,7 +159,7 @@ class StorageServer:
 				if not data:
 					break
 				else:
-					path += data.decode()
+					string += data.decode()
 			if not address:
 				break
 		ss.close()
@@ -167,7 +168,7 @@ class StorageServer:
 	def error_response(self, code: int):
 		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
-		ss.listen(1)
+		ss.listen()
 		while True:
 			(conn, address) = ss.accept()
 			conn.send(code.to_bytes(32, 'big'))
@@ -178,8 +179,8 @@ class StorageServer:
 	def check_path_correctness(self, path: str):
 		path_list = path.split('/')
 		full_path = STORAGE_SERVER_ROOT_PATH + '/'
-		for dir in path_list[:len(path) - 2]:
-			full_path += dir
+		for directory in path_list[:len(path) - 2]:
+			full_path += directory
 			if not os.path.exists(full_path):
 				return False
 		return True

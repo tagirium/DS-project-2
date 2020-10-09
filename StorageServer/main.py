@@ -21,7 +21,11 @@ def main():
             ss.send_file('response.txt')
             os.remove('response.txt')
     elif cmd == 'file_copy':
-        ss.file_copy(src_path=ss.receive_str(), dest_path=ss.receive_str())
+        paths = ss.receive_str().split('||')
+        ss.file_copy(src_path=paths[0], dest_path=paths[1])
+    elif cmd == 'file_move':
+        paths = ss.receive_str().split('||')
+        ss.file_move(src_path=paths[0], dest_path=paths[1])
     elif cmd == 'dir_open':
         ss.dir_open(path=ss.receive_str())
     elif cmd == 'dir_read':
