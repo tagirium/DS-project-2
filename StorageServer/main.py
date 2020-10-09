@@ -1,6 +1,6 @@
 import os
-import StorageServer as sserver
-from codes import *
+from StorageServer import StorageServer as sserver
+from StorageServer.codes import *
 
 
 def main():
