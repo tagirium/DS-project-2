@@ -1,45 +1,41 @@
-import socket
+import os
+import StorageServer as sserver
+from codes import *
 
-ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ssFT.bind((socket.gethostname(), 8756))
-ssFT.listen(1)
-while True:
-	(conn, address) = ssFT.accept()
-	text_file = 'fileProj.txt'
+def main():
+    ss = sserver.StorageServer()
+    cmd = ss.receive_str()
+    if cmd == 'file_read':
+        ss.file_read(path=ss.receive_str)
+    elif cmd == 'file_create':
+        ss.file_write(path=ss.receive_str)
+    elif cmd == 'file_delete':
+        ss.file_delete(path=ss.receive_str)
+    elif cmd == 'file_info':
+        ss.file_info(path=ss.receive_str)
+    elif cmd == 'file_copy':
+        ss.file_copy(src_path=ss.receive_str(), dest_path=ss.receive_str())
+    elif cmd == 'dir_open':
+        ss.dir_open(path=ss.receive_str())
+    elif cmd == 'dir_read':
+        f = open('response.txt', 'w')
+        f.write(ss.dir_read(path=ss.receive_str()))
+        f.close()
+        ss.send_file('response.txt')
+        os.remove('response.txt')
+    elif cmd == 'dir_make':
+        ss.dir_make(path=ss.receive_str())
+    elif cmd == 'dir_delete':
+        ss.dir_delete(path=ss.receive_str())
+    elif cmd == 'ping_from_naming':
+        ss.ping_from_naming()
+    else:
+        print('Invalid command')
 
-	# Receive, output and save file
-	with open(text_file, "wb") as fw:
-		print("Receiving..")
-		while True:
-			print('receiving')
-			data = conn.recv(32)
-			if data == b'BEGIN':
-				continue
-			elif data == b'ENDED':
-				print('Breaking from file write')
-				break
-			else:
-				print('Received: ', data.decode('utf-8'))
-				fw.write(data)
-				print('Wrote to file', data.decode('utf-8'))
-		fw.close()
-		print("Received..")
 
-	# Append and send file
-	print('Opening file ', text_file)
-	with open(text_file, 'ab+') as fa:
-		print('Opened file')
-		print("Appending string to file.")
-		string = b"Append this to file."
-		fa.write(string)
-		fa.seek(0, 0)
-		print("Sending file.")
-		while True:
-			data = fa.read(1024)
-			conn.send(data)
-			if not data:
-				break
-		fa.close()
-		print("Sent file.")
-	break
-ssFT.close()
+if __name__ == '__main__':
+    if not os.path.exists(STORAGE_SERVER_ROOT_PATH):
+        os.mkdir(STORAGE_SERVER_ROOT_PATH)
+    while True:
+        main()
+

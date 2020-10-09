@@ -1,19 +1,19 @@
-import os
 import shutil
+import os
+from codes import *
 import socket
 
 
 class StorageServer:
-
-	def file_read(self):  # ?
-		path = self.receive_path()
+	def file_read(self, path):
+		self.send_file(path)
 
 	def file_create(self, path):
 		file = open(path, 'w+')
 		file.close()
 
-	def file_write(self):  # ?
-		self.receive_file()
+	def file_write(self, path):
+		self.receive_file(path)
 
 	def file_delete(self, path):
 		if os.path.exists(path):
@@ -37,7 +37,7 @@ class StorageServer:
 	def dir_read(self, path):
 		if os.path.exists(path) and os.path.isdir(path):
 			entries = os.listdir(path)
-			return entries
+			return ' '.join(list(map(str, entries)))
 
 	def dir_make(self, path):
 		if not os.path.exists(path):
@@ -47,61 +47,59 @@ class StorageServer:
 		if os.path.exists(path):
 			os.rmdir(path)
 
-	def receive_file(self):
-		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ssFT.bind((socket.gethostname(), 8756))
-		ssFT.listen(1)
-		while True:
-			(conn, address) = ssFT.accept()
-			text_file = self.receive_path()  # path
+	def ping_from_naming(self):
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.bind((socket.gethostname(), NAMING_SERVER_PORT))
+		sock.send(CODE_OK.to_bytes())
 
+	def receive_file(self, path):
+		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
+		ss.listen(1)
+		while True:
+			(conn, address) = ss.accept()
+			text_file = STORAGE_SERVER_ROOT_PATH + path  # path
 			# Receive, output and save file
 			with open(text_file, "wb") as fw:
 				while True:
-					data = conn.recv(32)
+					data = conn.recv(BUFFER_SIZE)
 					if not data:
 						break
 					else:
 						fw.write(data)
-
 			break
-		ssFT.close()
+		ss.close()
 
 	def send_file(self, path):
 		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ssFT.bind((socket.gethostname(), 8756))
+		ssFT.bind((socket.gethostname(), STORAGE_SERVER_PORT))
 		ssFT.listen(1)
 		while True:
 			(conn, address) = ssFT.accept()
 			with open(path, 'ab+') as fa:
-				string = b"Append this to file."
-				fa.write(string)
-				fa.seek(0, 0)
-				while True:
-					data = fa.read(1024)
-					conn.send(data)
-					if not data:
-						break
+				l = fa.read(BUFFER_SIZE)
+				while l:
+					conn.send(l)
+					l = fa.read(BUFFER_SIZE)
 				fa.close()
 			break
+		ssFT.close()
 
-	def receive_path(self):
+	def receive_str(self):
 		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ssFT.bind((socket.gethostname(), 8757))
+		ssFT.bind((socket.gethostname(), STORAGE_SERVER_PORT))
 		ssFT.listen(1)
-		text_file = 'path.txt'  # path
+		path = ''  # path
 		while True:
 			(conn, address) = ssFT.accept()
 			# Receive, output and save file
-			with open(text_file, "wb") as fw:
-				while True:
-					data = conn.recv(32)
-					if not data:
-						break
-					else:
-						fw.write(data)
-		f = open(text_file, 'r+')
-		res = f.read()
-		os.remove(text_file)
+			while True:
+				data = conn.recv(BUFFER_SIZE)
+				if not data:
+					break
+				else:
+					path += data.decode()
+			break
 		ssFT.close()
-		return res
+		return str
+
