@@ -1,7 +1,7 @@
-import os
 import shutil
-from help import *
+import os
 from codes import *
+import socket
 
 
 class StorageServer:
@@ -47,14 +47,18 @@ class StorageServer:
 		if os.path.exists(path):
 			os.rmdir(path)
 
-	def receive_file(self, path):
-		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ssFT.bind((socket.gethostname(), 8801))
-		ssFT.listen(1)
-		while True:
-			(conn, address) = ssFT.accept()
-			text_file = path  # path
+	def ping_from_naming(self):
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.bind((socket.gethostname(), NAMING_SERVER_PORT))
+		sock.send(CODE_OK.to_bytes())
 
+	def receive_file(self, path):
+		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		ss.bind((socket.gethostname(), 8801))
+		ss.listen(1)
+		while True:
+			(conn, address) = ss.accept()
+			text_file = path  # path
 			# Receive, output and save file
 			with open(text_file, "wb") as fw:
 				while True:
@@ -63,9 +67,8 @@ class StorageServer:
 						break
 					else:
 						fw.write(data)
-
 			break
-		ssFT.close()
+		ss.close()
 
 	def send_file(self, path):
 		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -82,7 +85,7 @@ class StorageServer:
 			break
 		ssFT.close()
 
-	def receive_path(self):
+	def receive_str(self):
 		ssFT = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		ssFT.bind((socket.gethostname(), STORAGE_SERVER_PORT))
 		ssFT.listen(1)
@@ -98,5 +101,5 @@ class StorageServer:
 					path += data.decode()
 			break
 		ssFT.close()
-		return path
+		return str
 
