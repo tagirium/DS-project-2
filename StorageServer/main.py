@@ -1,10 +1,10 @@
 import os
 from StorageServer import StorageServer as sserver
 from StorageServer.codes import *
-
+from threading import Thread
 
 def main():
-    ss = sserver.StorageServer(8800)  # 555-35-35
+    ss = sserver.StorageServer()
     cmd = ss.receive_str()
     if cmd == 'file_read':
         ss.file_read(path=ss.receive_str())
@@ -38,8 +38,6 @@ def main():
         ss.dir_make(path=ss.receive_str())
     elif cmd == 'dir_delete':
         ss.dir_delete(path=ss.receive_str())
-    elif cmd == 'ping_from_naming':
-        ss.ping_from_naming()
     else:
         print('Invalid command')
 
@@ -47,6 +45,8 @@ def main():
 if __name__ == '__main__':
     if not os.path.exists(STORAGE_SERVER_ROOT_PATH):
         os.mkdir(STORAGE_SERVER_ROOT_PATH)
+    thread = Thread(target=sserver.ping_from_naming(), daemon=True)
+    thread.start()
     while True:
         main()
 

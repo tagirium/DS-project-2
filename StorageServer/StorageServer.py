@@ -6,8 +6,6 @@ import socket
 
 class StorageServer:
 
-	def __init__(self, port):
-		self.NAMING_SERVER_PORT = port
 
 	def file_read(self, path):
 		if os.path.exists(path):
@@ -100,11 +98,6 @@ class StorageServer:
 		else:
 			self.error_response(ERR_PATH_NOT_CORRECT)
 
-	def ping_from_naming(self):
-		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.bind((socket.gethostname(), self.NAMING_SERVER_PORT))
-		sock.send(CODE_OK.to_bytes())
-
 	def receive_file(self, path):
 		if os.path.exists(path):
 			self.error_response(ERR_FILE_EXISTS)
@@ -184,3 +177,9 @@ class StorageServer:
 			if not os.path.exists(full_path):
 				return False
 		return True
+
+
+def ping_from_naming():
+	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	sock.bind((socket.gethostname(), NAMING_SERVER_PORT))
+	sock.send(CODE_OK.to_bytes())
