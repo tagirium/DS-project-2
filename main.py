@@ -2,17 +2,24 @@ import os
 import StorageServer as sserver
 from codes import *
 
+
 def main():
-    ss = sserver.StorageServer()
+    ss = sserver.StorageServer(8800)  # 555-35-35
     cmd = ss.receive_str()
     if cmd == 'file_read':
-        ss.file_read(path=ss.receive_str)
+        ss.file_read(path=ss.receive_str())
     elif cmd == 'file_create':
-        ss.file_write(path=ss.receive_str)
+        ss.file_write(path=ss.receive_str())
     elif cmd == 'file_delete':
-        ss.file_delete(path=ss.receive_str)
+        ss.file_delete(path=ss.receive_str())
     elif cmd == 'file_info':
-        ss.file_info(path=ss.receive_str)
+        res = ss.file_info(path=ss.receive_str())
+        if res != -1:
+            f = open('response.txt', 'w')
+            f.write(res)
+            f.close()
+            ss.send_file('response.txt')
+            os.remove('response.txt')
     elif cmd == 'file_copy':
         ss.file_copy(src_path=ss.receive_str(), dest_path=ss.receive_str())
     elif cmd == 'dir_open':
