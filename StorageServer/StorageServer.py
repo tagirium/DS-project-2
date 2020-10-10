@@ -1,5 +1,6 @@
 import shutil
 import os
+import time
 from .codes import *
 import socket
 
@@ -171,7 +172,9 @@ class StorageServer:
 	def send_string(self, conn, string):
 		conn.send(string.encode())
 
+
 def ping_from_naming():
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	sock.sendto(CODE_OK.to_bytes(), (NAMING_SERVER_IP, NAMING_SERVER_PORT))
-	sock.close()
+	while True:
+		sock.sendto(CODE_OK.to_bytes(), (NAMING_SERVER_IP, NAMING_SERVER_PORT))
+		time.sleep(10.0)
