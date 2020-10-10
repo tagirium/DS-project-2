@@ -141,7 +141,7 @@ class StorageServer:
 			else:
 				string += data.decode()
 		self.send_response(CODE_OK, conn)
-		return str
+		return string
 
 	def establish_connection(self):
 		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
