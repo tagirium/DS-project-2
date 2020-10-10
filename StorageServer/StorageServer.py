@@ -104,17 +104,15 @@ class StorageServer:
 		elif self.check_path_correctness(path):
 			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 		else:
-			while True:
-				text_file = STORAGE_SERVER_ROOT_PATH + path  # path
-				# Receive, output and save file
-				with open(text_file, "wb") as fw:
-					while True:
-						data = conn.recv(BUFFER_SIZE)
-						if not data:
-							break
-						else:
-							fw.write(data)
-				break
+			text_file = STORAGE_SERVER_ROOT_PATH + path  # path
+			# Receive, output and save file
+			with open(text_file, "wb") as fw:
+				while True:
+					data = conn.recv(BUFFER_SIZE)
+					if not data:
+						break
+					else:
+						fw.write(data)
 			self.send_response(CODE_OK, conn)
 
 	def send_file(self, path, conn):
