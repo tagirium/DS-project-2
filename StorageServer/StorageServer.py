@@ -1,6 +1,6 @@
 import shutil
 import os
-from StorageServer.codes import *
+from codes import *
 import socket
 
 
