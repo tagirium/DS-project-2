@@ -1,10 +1,10 @@
 import os
-import StorageServer as sserver
-from codes import *
-
+from StorageServer import StorageServer as sserver
+from StorageServer.codes import *
+from threading import Thread
 
 def main():
-    ss = sserver.StorageServer(8800)  # 555-35-35
+    ss = sserver.StorageServer()
     cmd = ss.receive_str()
     if cmd == 'file_read':
         ss.file_read(path=ss.receive_str())
@@ -21,7 +21,11 @@ def main():
             ss.send_file('response.txt')
             os.remove('response.txt')
     elif cmd == 'file_copy':
-        ss.file_copy(src_path=ss.receive_str(), dest_path=ss.receive_str())
+        paths = ss.receive_str().split('||')
+        ss.file_copy(src_path=paths[0], dest_path=paths[1])
+    elif cmd == 'file_move':
+        paths = ss.receive_str().split('||')
+        ss.file_move(src_path=paths[0], dest_path=paths[1])
     elif cmd == 'dir_open':
         ss.dir_open(path=ss.receive_str())
     elif cmd == 'dir_read':
@@ -34,8 +38,6 @@ def main():
         ss.dir_make(path=ss.receive_str())
     elif cmd == 'dir_delete':
         ss.dir_delete(path=ss.receive_str())
-    elif cmd == 'ping_from_naming':
-        ss.ping_from_naming()
     else:
         print('Invalid command')
 
@@ -43,6 +45,8 @@ def main():
 if __name__ == '__main__':
     if not os.path.exists(STORAGE_SERVER_ROOT_PATH):
         os.mkdir(STORAGE_SERVER_ROOT_PATH)
+    thread = Thread(target=sserver.ping_from_naming(), daemon=True)
+    thread.start()
     while True:
         main()
 
