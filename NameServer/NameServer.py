@@ -1,10 +1,14 @@
 import socket
+from .codes import *
+import os
+
 
 class Directory(object):
 
     def __init__(self, name):
         self.list = []
         self.name = name
+        self.prev = None
 
     def add_child(self, obj):
         obj.prev = self
@@ -19,37 +23,37 @@ class Directory(object):
             return self
         for i in range(len(self.list)):
             if self.list[i].name == name:
-                return  self.list[i]
+                return self.list[i]
         return None
 
     def add_file_to_path(self, path):
         dirs = []
         dirs = path.split('/')
         dirs[0] = '/'
-        name = dirs[len(dirs)-1]
+        name = dirs[len(dirs) - 1]
         dirs.pop()
-        depth = len(dirs)-1
+        depth = len(dirs) - 1
         dir = self
         if depth == 0:
             dir.add_child(File(name))
             return
         for i in range(depth):
-            dir = dir.find_by_name(dirs[i+1])
+            dir = dir.find_by_name(dirs[i + 1])
         dir.add_child(File(name))
 
     def add_directory_to_path(self, path):
         dirs = []
         dirs = path.split('/')
         dirs[0] = '/'
-        name = dirs[len(dirs)-1]
+        name = dirs[len(dirs) - 1]
         dirs.pop()
-        depth = len(dirs)-1
+        depth = len(dirs) - 1
         dir = self
         if depth == 0:
             dir.add_child(Directory(name))
             return
         for i in range(depth):
-            dir = dir.find_by_name(dirs[i+1])
+            dir = dir.find_by_name(dirs[i + 1])
         dir.add_child(Directory(name))
 
     def remove_from_path(self, path):
@@ -58,7 +62,7 @@ class Directory(object):
         dirs[0] = '/'
         name = dirs[len(dirs) - 1]
         dirs.pop()
-        depth = len(dirs)-1
+        depth = len(dirs) - 1
         dir = self
 
         if depth == 0:
@@ -70,15 +74,15 @@ class Directory(object):
                 else:
                     print('not this one')
         for i in range(depth):
-            dir = dir.find_by_name(dirs[i+1])
+            dir = dir.find_by_name(dirs[i + 1])
 
         for i in range(len(dir.list)):
             if dir.list[i].name == name:
                 dir.list.pop(i)
-                #print('deleted')
+                # print('deleted')
                 return 0
-            #else:
-                #print('not this one')
+            # else:
+            # print('not this one')
         return 1
 
     def get_from_path(self, path):
@@ -99,7 +103,7 @@ class Directory(object):
 
     def go_to_root(self):
         dir = self
-        while(dir.name != '/'):
+        while (dir.name != '/'):
             dir = self.prev
         return dir
 
@@ -108,123 +112,175 @@ class File(object):
 
     def __init__(self, name):
         self.name = name
+        self.prev = None
+
 
 def initialize():
     directory_tree = Directory('/')
     return directory_tree
 
-def file_create(root:Directory,path):
+
+def file_create(root: Directory, path):
     root.add_file_to_path(path)
     return
 
-def file_read():
-    return
-
-def file_write():
-    return
-
-def file_delete():
-    return
-
-def file_info():
-    return
-
-def file_copy():
-    return
-
-def file_move():
-    return
-
-def open_directory():
-    return
-
-def read_directory():
-    return
-
-def make_directory():
-    return
-
-def delete_directory():
+def file_delete(root: Directory, path):
+    #TODO
     return
 
 
-"""
-command =  '/lolkek/cheburek/a.txt'
-command2 = '/lolkek/pisos'
-command2 = '/lolkek/pisos'
+def establish_connection(port):
+    ns = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ns.bind((socket.gethostname(), port))
+    ns.listen()
+    (conn, address) = ns.accept()
+    return conn, ns
 
-directory_tree = Directory('/')
-directory_tree.add_child(Directory('lolkek'))
-directory_tree.list[0].add_child(Directory('cheburek'))
-directory_tree.add_child(Directory('keklol'))
-directory_tree.add_child(Directory('arbidol'))
 
-directory_tree.add_file_to_path(command)
-directory_tree.add_directory_to_path(command2)
-#directory_tree.remove_from_path(command)
+def send_response(code: int, conn):
+    conn.send(code.to_bytes(32, 'big'))
 
-directory_tree = directory_tree.get_from_path('/lolkek')
 
-directory_tree = directory_tree.go_to_root()
-directory_tree.print_children()
-print(directory_tree.name)
+def receive_str(conn):
+    string = ''
+    # Receive, output and save file
+    while True:
+        data = conn.recv(BUFFER_SIZE)
+        if not data:
+            break
+        else:
+            string += data.decode()
+    send_response(CODE_OK, conn)
+    return string
 
-#directory_tree.find_by_name('lolkek').print_children()
-#directory_tree.print_children()"""
 
-def resolve(str):
+def receive_file(conn):
+    text_file = './file'
+    # Receive, output and save file
+    with open(text_file, "wb") as fw:
+        while True:
+            data = conn.recv(BUFFER_SIZE)
+            if not data:
+                break
+            else:
+                fw.write(data)
+    send_response(CODE_OK, conn)
 
-    arr = [None, None, None, None]
-    arr2 = str.split('||')
-    for i in range(4):
-        if i < len(arr2)-1:
-            arr[i] = arr2[i]
-    return arr
+
+def send_string(ns, string):
+    ns.send(string.encode())
+
+
+def send_file(ns):
+    filepath = './file'
+
+    # Send the file data
+    with open(filepath, 'ab+') as fa:
+        l = fa.read(BUFFER_SIZE)
+        while l:
+            ns.send(l)
+            flag = ns.recv(BUFFER_SIZE)
+            if flag != CODE_OK:
+                print("Error")
+                exit()
+            l = fa.read(BUFFER_SIZE)
+        fa.close()
+
 
 work_dir = None
-str_from_client = 'initialize||'
-i = 0
-while i<2:
-    #TODO wait for client request
-    #TODO resolve request
+while True:
+    conn, sock = establish_connection()
+    addr = ''
+    sns = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sns.connect((addr, STORAGE_SERVER_PORT))
 
-    from_client = resolve(str_from_client)
+    command = receive_str()
 
-    print(from_client)
-    if from_client[0] == 'initialize':
+    if command == 'initialize':
         work_dir = initialize()
         print('initialized')
-    elif from_client[0] == 'file_create':
-        file_create(work_dir, from_client[1])
+    elif command == 'file_create':
+        path = receive_str(conn)
+        file_create(work_dir, path)
+        send_string(sns, command)
+        send_string(sns, path)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
         work_dir.print_children()
         print('file created')
-    elif from_client[0] == 'file_read':
+
+    elif command == 'file_read':
+        path = receive_str(conn)
+        send_string(sns, command)
+        send_string(sns, path)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
+        receive_file(sns)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
+        send_file(conn)
         print('done')
-    elif from_client[0] == 'file_write':
+
+    elif command == 'file_write':
+        path = receive_str(conn)
+        receive_file(conn)
+        send_string(sns, command)
+        send_string(sns, path)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
+        send_file(sns)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
+        file_create(work_dir, path)
         print('done')
-    elif from_client[0] == 'file_delete':
+
+    elif command == 'file_delete':
+        path = receive_str(conn)
+        #TODO delete
+        send_string(sns, command)
+        send_string(sns, path)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
         print('done')
-    elif from_client[0] == 'file_info':
+
+    elif command == 'file_info':
+        path = receive_str(conn)
+        send_string(sns, path)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
+        info = receive_str(sns)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
+        send_string(conn, info)
         print('done')
-    elif from_client[0] == 'file_copy':
+
+    elif command == 'file_copy':
+        paths = receive_str(conn)
+        #TODO file copy
+        send_string(sns, command)
+        send_string(sns, paths)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
         print('done')
-    elif from_client[0] == 'file_move':
+
+    elif command == 'file_move':
+        paths = receive_str(conn)
+        #TODO file move
+        send_string(sns, command)
+        send_string(sns, paths)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
         print('done')
-    elif from_client[0] == 'open_directory':
+
+    elif command == 'open_directory':
+        path = receive_str(conn)
         print('done')
-    elif from_client[0] == 'read_directory':
+    elif command == 'read_directory':
+        path = receive_str(conn)
+        #TODO read diroctory
+        direct = ''
+        send_string(conn,direct)
         print('done')
-    elif from_client[0] == 'make_directory':
+    elif command == 'make_directory':
+        path = receive_str(conn)
         print('done')
-    elif from_client[0] == 'delete_directory':
+    elif command == 'delete_directory':
+        path = receive_str(conn)
         print('done')
+    elif command == 'time_to_die':
+        conn.close()
+        send_string(sns, command)
 
     str_from_client = 'file_create||/a.txt||'
-    #TODO Do operations on dir tree
-    #TODO Send instructions and files to storage servers
-    i += 1
-
-
-
-
-
+    # TODO Do operations on dir tree
+    # TODO Send instructions and files to storage servers
