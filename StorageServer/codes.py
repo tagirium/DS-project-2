@@ -1,7 +1,6 @@
 # Constants
 BUFFER_SIZE = 32
 INITIAL_SIZE = 1024
-CLIENT_ROOT_PATH = "client_files"
 STORAGE_SERVER_ROOT_PATH = "sserver_files"
 NAMING_SERVER_IP = "localhost"
 STORAGE_SERVER_PORT = 8801
