@@ -1,135 +1,125 @@
 import shutil
 import os
-from StorageServer.codes import *
+from .codes import *
 import socket
 
 
 class StorageServer:
 
-
-	def file_read(self, path):
+	def file_read(self, path, conn):
 		if os.path.exists(path):
-			self.send_file(path)
+			self.send_file(path, conn)
+			self.send_response(CODE_OK, conn)
 		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 
-	def file_create(self, path):
+	def file_create(self, path, conn):
 		if self.check_path_correctness(path):
 			if not os.path.exists(path):
 				file = open(path, 'w+')
 				file.close()
+				self.send_response(CODE_OK, conn)
 			else:
-				self.error_response(ERR_FILE_EXISTS)
+				self.send_response(ERR_FILE_EXISTS, conn)
 		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 
-	def file_write(self, path):
+	def file_write(self, path, conn):
 		if not os.path.exists(path):
 			if self.check_path_correctness(path):
-				self.receive_file(path)
+				self.receive_file(path, conn)
+				self.send_response(CODE_OK, conn)
 			else:
-				self.error_response(ERR_PATH_NOT_CORRECT)
+				self.send_response(ERR_PATH_NOT_CORRECT, conn)
 		else:
-			self.error_response(ERR_FILE_EXISTS)
+			self.send_response(ERR_FILE_EXISTS, conn)
 
-	def file_delete(self, path):
+	def file_delete(self, path, conn):
 		if os.path.exists(path):
 			os.remove(path)
+			self.send_response(CODE_OK, conn)
 		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 
-	def file_info(self, path):
+	def file_info(self, path, conn):
 		if os.path.exists(path):
-			return os.stat(path)
+			res = os.stat(path)
+			f = open('response.txt', 'w')
+			f.write(str(res))
+			f.close()
+			self.send_file('response.txt', conn)
+			os.remove('response.txt')
+			self.send_response(CODE_OK, conn)
 		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 			return -1
 
-	def file_copy(self, src_path, dest_path):
+	def file_copy(self, src_path, dest_path, conn):
 		if os.path.exists(src_path):
 			if not os.path.exists(dest_path):
 				if self.check_path_correctness(dest_path):
 					shutil.copyfile(src_path, dest_path)
+					self.send_response(CODE_OK, conn)
 				else:
-					self.error_response(ERR_PATH_NOT_CORRECT)
+					self.send_response(ERR_PATH_NOT_CORRECT, conn)
 			else:
-				self.error_response(ERR_FILE_EXISTS)
+				self.send_response(ERR_FILE_EXISTS, conn)
 		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 
-	def file_move(self, src_path, dest_path):
+	def file_move(self, src_path, dest_path, conn):
 		if os.path.exists(src_path):
 			if not os.path.exists(dest_path):
 				if self.check_path_correctness(dest_path):
-					self.file_copy(src_path, dest_path)
-					self.file_delete(src_path)
+					self.file_copy(src_path, dest_path,conn)
+					self.file_delete(src_path, conn)
+					self.send_response(CODE_OK, conn)
 				else:
-					self.error_response(ERR_PATH_NOT_CORRECT)
+					self.send_response(ERR_PATH_NOT_CORRECT, conn)
 			else:
-				self.error_response(ERR_FILE_EXISTS)
+				self.send_response(ERR_FILE_EXISTS, conn)
 		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 
-	def dir_open(self, path):
-		if os.path.exists(path):
-			os.chdir(path)
-		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
-
-	def dir_read(self, path):
-		if os.path.exists(path) and os.path.isdir(path):
-			entries = os.listdir(path)
-			return ', '.join(list(map(str, entries)))
-		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
-
-	def dir_make(self, path):
+	def dir_make(self, path, conn):
 		if not os.path.exists(path):
 			if self.check_path_correctness(path):
 				os.mkdir(path)
+				self.send_response(CODE_OK, conn)
 			else:
-				self.error_response(ERR_PATH_NOT_CORRECT)
+				self.send_response(ERR_PATH_NOT_CORRECT, conn)
 		else:
-			self.error_response(ERR_DIR_EXISTS)
+			self.send_response(ERR_DIR_EXISTS, conn)
 
-	def dir_delete(self, path):
+	def dir_delete(self, path, conn):
 		if os.path.exists(path):
 			os.rmdir(path)
+			self.send_response(CODE_OK, conn)
 		else:
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 
-	def receive_file(self, path):
+	def receive_file(self, path, conn):
 		if os.path.exists(path):
-			self.error_response(ERR_FILE_EXISTS)
+			self.send_response(ERR_FILE_EXISTS, conn)
 		elif self.check_path_correctness(path):
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 		else:
-			ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
-			ss.listen()
-			while True:
-				(conn, address) = ss.accept()
-				text_file = STORAGE_SERVER_ROOT_PATH + path  # path
-				# Receive, output and save file
-				with open(text_file, "wb") as fw:
-					while True:
-						data = conn.recv(BUFFER_SIZE)
-						if not data:
-							break
-						else:
-							fw.write(data)
-				break
-			ss.close()
+			text_file = STORAGE_SERVER_ROOT_PATH + path  # path
+			# Receive, output and save file
+			with open(text_file, "wb") as fw:
+				while True:
+					data = conn.recv(BUFFER_SIZE)
+					if not data:
+						break
+					else:
+						fw.write(data)
+			self.send_response(CODE_OK, conn)
 
-	def send_file(self, path):
+	def send_file(self, path, conn):
 		if not os.path.exists(path):
-			self.error_response(ERR_PATH_NOT_CORRECT)
+			self.send_response(ERR_PATH_NOT_CORRECT, conn)
 		else:
-			ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
-			ss.listen()
 			while True:
-				(conn, address) = ss.accept()
 				with open(path, 'ab+') as fa:
 					l = fa.read(BUFFER_SIZE)
 					while l:
@@ -137,37 +127,29 @@ class StorageServer:
 						l = fa.read(BUFFER_SIZE)
 					fa.close()
 				break
-			ss.close()
+			self.send_response(CODE_OK, conn)
 
-	def receive_str(self):
-		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
-		ss.listen()
+	def receive_str(self, conn):
 		string = ''
+		# Receive, output and save file
 		while True:
-			(conn, address) = ss.accept()
-			# Receive, output and save file
-			while True:
-				data = conn.recv(BUFFER_SIZE)
-				if not data:
-					break
-				else:
-					string += data.decode()
-			if not address:
+			data = conn.recv(BUFFER_SIZE)
+			if not data:
 				break
-		ss.close()
-		return str
+			else:
+				string += data.decode()
+		self.send_response(CODE_OK, conn)
+		return string
 
-	def error_response(self, code: int):
+	def establish_connection(self):
 		ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		ss.bind((socket.gethostname(), STORAGE_SERVER_PORT))
 		ss.listen()
-		while True:
-			(conn, address) = ss.accept()
-			conn.send(code.to_bytes(32, 'big'))
-			if not address:
-				break
-		ss.close()
+		(conn, address) = ss.accept()
+		return conn, ss
+
+	def send_response(self, code: int, conn):
+		conn.send(code.to_bytes(32, 'big'))
 
 	def check_path_correctness(self, path: str):
 		path_list = path.split('/')
@@ -177,6 +159,19 @@ class StorageServer:
 			if not os.path.exists(full_path):
 				return False
 		return True
+
+	def close_connection(self, sock):
+		sock.close()
+
+	def init(self, conn):
+		if os.path.exists(STORAGE_SERVER_ROOT_PATH):
+			shutil.rmtree(STORAGE_SERVER_ROOT_PATH)
+			os.mkdir(STORAGE_SERVER_ROOT_PATH)
+			self.send_response(CODE_OK, conn)
+		else:
+			os.mkdir(STORAGE_SERVER_ROOT_PATH)
+			self.send_response(CODE_OK, conn)
+		self.send_response(shutil.disk_usage(STORAGE_SERVER_ROOT_PATH).free // 2**30, conn)
 
 
 def ping_from_naming():
