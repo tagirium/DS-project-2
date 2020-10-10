@@ -124,8 +124,9 @@ def file_create(root: Directory, path):
     root.add_file_to_path(path)
     return
 
+
 def file_delete(root: Directory, path):
-    #TODO
+    # TODO
     return
 
 
@@ -231,7 +232,7 @@ while True:
 
     elif command == 'file_delete':
         path = receive_str(conn)
-        #TODO delete
+        # TODO delete
         send_string(sns, command)
         send_string(sns, path)
         send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
@@ -248,7 +249,7 @@ while True:
 
     elif command == 'file_copy':
         paths = receive_str(conn)
-        #TODO file copy
+        # TODO file copy
         send_string(sns, command)
         send_string(sns, paths)
         send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
@@ -256,7 +257,7 @@ while True:
 
     elif command == 'file_move':
         paths = receive_str(conn)
-        #TODO file move
+        # TODO file move
         send_string(sns, command)
         send_string(sns, paths)
         send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
@@ -267,15 +268,22 @@ while True:
         print('done')
     elif command == 'read_directory':
         path = receive_str(conn)
-        #TODO read diroctory
+        # TODO read diroctory
         direct = ''
-        send_string(conn,direct)
+        send_string(conn, direct)
         print('done')
     elif command == 'make_directory':
         path = receive_str(conn)
+        #TODO make dir
+        send_string(sns,command)
+        send_string(sns, path)
+        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
         print('done')
     elif command == 'delete_directory':
         path = receive_str(conn)
+        #TODO make dir
+        send_string(sns, command)
+        send_string(sns, path)
         print('done')
     elif command == 'time_to_die':
         conn.close()
