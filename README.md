@@ -41,7 +41,7 @@ The task is to create Distributed File System. DFS have to support file reading,
 
 
 
-## Conlusion
+## Conclusion
 
 
 
