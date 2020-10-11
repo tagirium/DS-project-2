@@ -1,5 +1,6 @@
 import shutil
 import os
+import time
 from .codes import *
 import socket
 
@@ -44,15 +45,10 @@ class StorageServer:
 	def file_info(self, path, conn):
 		if os.path.exists(path):
 			res = os.stat(path)
-			f = open('response.txt', 'w')
-			f.write(str(res))
-			f.close()
-			self.send_file('response.txt', conn)
-			os.remove('response.txt')
+			self.send_file(conn, str(res))
 			self.send_response(CODE_OK, conn)
 		else:
 			self.send_response(ERR_PATH_NOT_CORRECT, conn)
-			return -1
 
 	def file_copy(self, src_path, dest_path, conn):
 		if os.path.exists(src_path):
@@ -173,8 +169,12 @@ class StorageServer:
 			self.send_response(CODE_OK, conn)
 		self.send_response(shutil.disk_usage(STORAGE_SERVER_ROOT_PATH).free // 2**30, conn)
 
+	def send_string(self, conn, string):
+		conn.send(string.encode())
+
 
 def ping_from_naming():
 	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	sock.sendto(CODE_OK.to_bytes(), (NAMING_SERVER_IP, NAMING_SERVER_PORT))
-	sock.close()
+	while True:
+		sock.sendto(CODE_OK.to_bytes(), (NAMING_SERVER_IP, NAMING_SERVER_PORT))
+		time.sleep(10.0)
