@@ -215,6 +215,7 @@ for i in storages:
     active_storages[i].append(time.time())
     active_storages[i][0].connect((i, STORAGE_SERVER_PORT))
 
+
 def check_storages():
     chk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     while True:
@@ -232,8 +233,6 @@ thread.start()
 
 addr = ''
 conn, sock = establish_connection()
-
-
 
 while True:
 
@@ -288,7 +287,6 @@ while True:
             send_string(active_storages[i][0], command)
             send_string(active_storages[i][0], path)
 
-
             if b:
                 send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
                 b = False
@@ -296,7 +294,6 @@ while True:
                 active_storages[i][0].recv(BUFFER_SIZE)
 
             send_file(active_storages[i][0])
-
 
             if c:
                 send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
