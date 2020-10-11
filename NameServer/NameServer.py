@@ -1,5 +1,7 @@
 import socket
 from .codes import *
+from threading import Thread
+import time
 import os
 
 
@@ -69,10 +71,7 @@ class Directory(object):
             for i in range(len(dir.list)):
                 if dir.list[i].name == name:
                     dir.list.pop(i)
-                    print('deleted')
                     return 0
-                else:
-                    print('not this one')
         for i in range(depth):
             dir = dir.find_by_name(dirs[i + 1])
 
@@ -81,8 +80,6 @@ class Directory(object):
                 dir.list.pop(i)
                 # print('deleted')
                 return 0
-            # else:
-            # print('not this one')
         return 1
 
     def get_from_path(self, path):
@@ -101,9 +98,16 @@ class Directory(object):
             dir = dir.find_by_name(dirs[i + 1])
         return dir
 
+    def get_directory(self, path):
+        contents = ''
+        dir = self.get_from_path(path)
+        for i in range(len(dir.list)):
+            contents = contents + dir.list[i].name + '/'
+        return contents
+
     def go_to_root(self):
         dir = self
-        while (dir.name != '/'):
+        while dir.name != '/':
             dir = self.prev
         return dir
 
@@ -126,8 +130,21 @@ def file_create(root: Directory, path):
 
 
 def file_delete(root: Directory, path):
-    # TODO
+    root.remove_from_path(path)
     return
+
+
+def file_copy(root: Directory, path1, path2):
+    name = root.get_from_path(path1).name
+    path2 = path2 + '/' + name
+    root.add_file_to_path(path2)
+
+
+def file_move(root: Directory, path1, path2):
+    name = root.get_from_path(path1).name
+    root.remove_from_path(path1)
+    path2 = path2 + '/' + name
+    root.add_file_to_path(path2)
 
 
 def establish_connection(port):
@@ -187,8 +204,22 @@ def send_file(ns):
             l = fa.read(BUFFER_SIZE)
         fa.close()
 
+active_storages = {'ip1':1,'ip2':1,'ip3':1}
+storages = ['ip1', 'ip2', 'ip3']
+def check_storages():
+    chk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    while True:
+        data, (ip, port) = chk.recvfrom(BUFFER_SIZE)
+        time_now = time.time()
+        active_storages[ip] = time_now
+        for ips in list(active_storages.keys()):
+            if time_now - active_storages[ips] > 10:
+                active_storages.pop(ips)
 
 work_dir = None
+thread = Thread(target=check_storages(), daemon=True)
+thread.start()
+
 while True:
     conn, sock = establish_connection()
     addr = ''
@@ -232,7 +263,7 @@ while True:
 
     elif command == 'file_delete':
         path = receive_str(conn)
-        # TODO delete
+        file_delete(work_dir, path)
         send_string(sns, command)
         send_string(sns, path)
         send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
@@ -249,7 +280,8 @@ while True:
 
     elif command == 'file_copy':
         paths = receive_str(conn)
-        # TODO file copy
+        path = paths.split('||')
+        file_copy(work_dir, path[0], path[1])
         send_string(sns, command)
         send_string(sns, paths)
         send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
@@ -257,7 +289,8 @@ while True:
 
     elif command == 'file_move':
         paths = receive_str(conn)
-        # TODO file move
+        path = paths.split('||')
+        file_move(work_dir, path[0], path[1])
         send_string(sns, command)
         send_string(sns, paths)
         send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
@@ -268,20 +301,19 @@ while True:
         print('done')
     elif command == 'read_directory':
         path = receive_str(conn)
-        # TODO read diroctory
-        direct = ''
+        direct = work_dir.get_directory(path)
         send_string(conn, direct)
         print('done')
     elif command == 'make_directory':
         path = receive_str(conn)
-        #TODO make dir
-        send_string(sns,command)
+        work_dir.add_directory_to_path(path)
+        send_string(sns, command)
         send_string(sns, path)
         send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
         print('done')
     elif command == 'delete_directory':
         path = receive_str(conn)
-        #TODO make dir
+        work_dir.remove_from_path(path)
         send_string(sns, command)
         send_string(sns, path)
         print('done')
