@@ -1,7 +1,7 @@
 # DS-project-2
 
 * GitHub [repository](https://github.com/tagirium/DS-project-2)
-* DockerHub [image of storage server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-storage) [image of naming server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-naming)
+* DockerHub [image of storage server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-storage), [image of naming server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-naming)
 
 ## Contents
 
@@ -38,9 +38,9 @@ Storage Server implementation, creation Docker Images
 
 The task is to create Distributed File System. DFS have to support file reading, writing, creation, deletion, copy, moving and info queries. It should also support certain directory operations - listing, creation, changing and deletion. Files must be replicated on multiple storage servers.
 
-## AWS Deploymen
-
-
+## AWS Deployment
+* 1. Install docker on AWS instance
+* 2. 
 
 ## How to Run
 
