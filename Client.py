@@ -4,7 +4,6 @@ import os
 BUFFER_SIZE = 2048
 CODE_OK = 4
 
-# print("Enter Naming Server's IP: ")
 NAMING_SERVER_IP = "192.168.43.117"
 # NAMING_SERVER_IP = input()
 PORT = 8080
