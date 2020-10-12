@@ -1,11 +1,13 @@
 import socket
+import os
 
-BUFFER_SIZE = 32
+BUFFER_SIZE = 2048
 CODE_OK = 4
 
-print("Enter Naming Server's IP: ")
-NAMING_SERVER_IP = input()
-PORT = 8880
+# print("Enter Naming Server's IP: ")
+NAMING_SERVER_IP = "192.168.43.117"
+# NAMING_SERVER_IP = input()
+PORT = 8080
 
 # Create socket connection
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,25 +18,23 @@ def send(cmd, p):
     s.send(cmd.encode())
     s.send(p.encode())
 
-    flag = s.recv(BUFFER_SIZE)
-    if flag != CODE_OK:
-        print("Wrong path")
-        exit()
-
-    if command == 'file_write':
+    if cmd == 'file_write':
         print("Enter path of a file u want to send: ")
         filepath = input()
 
+        if os.path.exists(filepath):
+            s.send(str(os.stat(filepath).st_size).encode())
+
         # Send the file data
-        with open(filepath, 'ab+') as fa:
-            l = fa.read(BUFFER_SIZE)
-            while l:
-                s.send(l)
-                flag = s.recv(BUFFER_SIZE)
-                if flag != CODE_OK:
-                    print("Error")
-                    exit()
-                l = fa.read(BUFFER_SIZE)
+        with open(filepath, 'rb') as fa:
+            num_of_blocks = os.stat(filepath).st_size//BUFFER_SIZE
+            for i in range(num_of_blocks):
+                data = fa.read(BUFFER_SIZE)
+                # print(data)
+                s.send(data)
+            final_data = fa.read(os.stat(filepath).st_size - num_of_blocks * BUFFER_SIZE)
+            # print(final_data)
+            s.send(final_data)
             fa.close()
 
 
@@ -43,80 +43,100 @@ def receive(sock):
     # Receive, output and save file
     while True:
         data = sock.recv(BUFFER_SIZE)
-        if not data:
-            break
-        else:
-            string += data.decode()
+        string += data.decode()
+        break
+
     return string
 
 
 def receive_file(sock, fname):
     # Receive, output and save file
+    st = receive(s)
+    filesize = int(st)
     with open(fname, "wb") as fw:
-        while True:
-            data = sock.recv(BUFFER_SIZE)
-            if not data:
-                break
-            else:
-                fw.write(data)
+        for i in range(filesize):
+            data = sock.recv(1)
+            fw.write(data)
+            fw.flush()
+        fw.close()
 
-
-print("Enter command: ")
-command = input()
-print("Enter path: ")
-path = input()
 
 while True:
+
+    print("Enter command: ")
+    command = input()
+
     if command == 'init':
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((NAMING_SERVER_IP, PORT))
         s.send(command.encode())
-        # Close the socket to end the connection
-        s.close()
+        output = s.recv(BUFFER_SIZE)
+        print(output)
 
     elif command == 'file_create':
+        print("Enter path: ")
+        path = input()
         send(command, path)
 
     elif command == 'file_read':
+        print("Enter path: ")
+        path = input()
+        # print(path.split('/')[len(path.split())])
         send(command, path)
-        filename = path.split('/')[len(path.split())-1]
+        filename = os.getcwd() + '/' + path.split('/')[len(path.split())]
         receive_file(s, filename)
 
     elif command == 'file_write':
+        print("Enter path: ")
+        path = input()
         send(command, path)
 
     elif command == 'file_delete':
+        print("Enter path: ")
+        path = input()
         send(command, path)
 
     elif command == 'file_info':
+        print("Enter path: ")
+        path = input()
         send(command, path)
         output = receive(s)
         print("File info:", output)
 
     elif command == 'file_copy':
+        print("Enter path: ")
+        path = input()
         print("Enter destination path: ")
         path_dest = input()
         path_new = path+'||'+path_dest
         send(command, path_new)
 
     elif command == 'file_move':
+        print("Enter path: ")
+        path = input()
         print("Enter destination path: ")
         path_dest = input()
         path_new = path + '||' + path_dest
         send(command, path_new)
 
     elif command == 'dir_open':
+        print("Enter path: ")
+        path = input()
         send(command, path)
 
     elif command == 'dir_read':
+        print("Enter path: ")
+        path = input()
         send(command, path)
         output = receive(s)
-        print("File info:", output)
+        print("File information: ", output)
 
     elif command == 'dir_make':
+        print("Enter path: ")
+        path = input()
         send(command, path)
 
     elif command == 'dir_delete':
+        print("Enter path: ")
+        path = input()
         send(command, path)
 
     else:
@@ -124,7 +144,7 @@ while True:
               "file_delete\n file_info\n file_copy\n file_move\n dir_open\n dir_read\n dir_make\n dir_delete")
 
     # if that's it:
-    print("If that's it send command 'quit' ")
+    print("If that's it send command 'quit', otherwise press Enter")
     quit_cmd = input()
     if quit_cmd == 'quit':
         ttd = 'time_to_die'
