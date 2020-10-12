@@ -84,6 +84,8 @@ The task is to create Distributed File System. DFS have to support file reading,
 ## References
 
 [Assignment](https://docs.google.com/document/d/1Is2QFO20RjxVrZMSMCxsBa-FUgGgaIJ7e_o3CeQKN6w/edit#)
+
 [Naming Server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-naming)
+
 [Storage Server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-storage)
 
