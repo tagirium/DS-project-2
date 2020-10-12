@@ -30,7 +30,7 @@ Client implementation, report
 
 * **Tagir Shigapov BS18-SE-01**
 
-Storage Server implementation, creation Docker Images
+Storage Server implementation, creation Docker Images, report
 
 
 ## The Problem
