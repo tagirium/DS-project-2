@@ -1,8 +1,21 @@
 import socket
-from .codes import *
+import os
 from threading import Thread
 import time
-import os
+
+BUFFER_SIZE = 32
+INITIAL_SIZE = 1024
+NAMING_SERVER_IP = "localhost"
+STORAGE_SERVER_PORT = 8801
+PING_SERVERS_SECONDS = 20
+NAMING_SERVER_PORT = 8800  # 555-35-35
+# Codes
+
+ERR_PATH_NOT_CORRECT = 1
+ERR_FILE_DIR_NOT_EXIST = 2
+ERR_DIR_EXISTS = 20
+ERR_FILE_EXISTS = 21
+CODE_OK = 4
 
 
 class Directory(object):
@@ -128,8 +141,16 @@ def file_create(root: Directory, path):
     root.add_file_to_path(path)
     return
 
+def directory_create(root: Directory, path):
+    root.add_directory_to_path(path)
+    return
+
 
 def file_delete(root: Directory, path):
+    root.remove_from_path(path)
+    return
+
+def directory_delete(root: Directory, path):
     root.remove_from_path(path)
     return
 
@@ -149,7 +170,7 @@ def file_move(root: Directory, path1, path2):
 
 def establish_connection(port):
     ns = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ns.bind((socket.gethostname(), port))
+    ns.bind(('192.168.43.117', port))
     ns.listen()
     (conn, address) = ns.accept()
     return conn, ns
@@ -163,63 +184,55 @@ def receive_str(conn):
     string = ''
     # Receive, output and save file
     while True:
-        data = conn.recv(BUFFER_SIZE)
-        if not data:
-            break
-        else:
-            string += data.decode()
-    send_response(CODE_OK, conn)
+        data = conn.recv(2048)
+        print(data)
+        string += data.decode()
+        break
+        # print(type(string))
+    # send_response(CODE_OK, conn)
     return string
 
 
 def receive_file(conn):
-    text_file = './file'
+    text_file = os.getcwd() + '/file' # path
     # Receive, output and save file
     with open(text_file, "wb") as fw:
         while True:
-            data = conn.recv(BUFFER_SIZE)
+            data = conn.recv(1)
             if not data:
                 break
-            else:
-                fw.write(data)
-    send_response(CODE_OK, conn)
+            fw.write(data)
 
 
 def send_string(ns, string):
     ns.send(string.encode())
 
 
-def send_file(ns):
-    filepath = './file'
-
-    # Send the file data
-    with open(filepath, 'ab+') as fa:
-        l = fa.read(BUFFER_SIZE)
-        while l:
-            ns.send(l)
-            flag = ns.recv(BUFFER_SIZE)
-            if flag != CODE_OK:
-                print("Error")
-                exit()
-            l = fa.read(BUFFER_SIZE)
-        fa.close()
+def send_file(conn):
+    if os.path.exists(os.getcwd() + '/file'):
+        with open(path, 'ab+') as fa:
+            l = fa.read(1)
+            while l:
+                conn.send(l)
+                l = fa.read(1)
 
 
-active_storages = {'ip1': [], 'ip2': [], 'ip3': []}
-storages = ['ip1', 'ip2', 'ip3']
+active_storages = {'192.168.43.85': []}
+storages = ['192.168.43.85']
 
 j = 0
 sns = []
 for i in storages:
     active_storages[i].append(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
     active_storages[i].append(time.time())
+    print(active_storages[i][0])
     active_storages[i][0].connect((i, STORAGE_SERVER_PORT))
 
 
 def check_storages():
     chk = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     while True:
-        data, (ip, port) = chk.recvfrom(BUFFER_SIZE)
+        data, (ip, port) = chk.recvfrom(1024)
         time_now = time.time()
         active_storages[ip][1] = time_now
         for ips in list(active_storages.keys()):
@@ -228,51 +241,54 @@ def check_storages():
 
 
 work_dir = None
-thread = Thread(target=check_storages(), daemon=True)
-thread.start()
+# thread = Thread(target=check_storages(), daemon=True)
+# thread.start()
 
 addr = ''
-conn, sock = establish_connection()
+conn, sock = establish_connection(8080)
 
 while True:
 
-    command = receive_str()
+    command = receive_str(conn)
 
-    if command == 'initialize':
-
+    if command == 'init':
+        print('a')
         work_dir = initialize()
         active = active_storages[list(active_storages.keys())[0]][0]
         b = True
         for i in active_storages.keys():
             send_string(active_storages[i][0], command)
             if b:
-                send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
                 b = False
-            else:
-                active_storages[i][0].recv(BUFFER_SIZE)
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
+        kek = receive_str(active)
+        send_string(conn, kek)
 
     elif command == 'file_create':
         path = receive_str(conn)
         file_create(work_dir, path)
         active = active_storages[list(active_storages.keys())[0]][0]
+        b = True
         for i in active_storages.keys():
             send_string(active_storages[i][0], command)
             send_string(active_storages[i][0], path)
             if b:
-                send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
                 b = False
-            else:
-                active_storages[i][0].recv(BUFFER_SIZE)
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
 
     elif command == 'file_read':
         path = receive_str(conn)
         active = active_storages[list(active_storages.keys())[0]][0]
         send_string(active, command)
         send_string(active, path)
-        send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+        # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
 
         receive_file(active)
-        send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+        # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
 
         send_file(conn)
 
@@ -288,18 +304,18 @@ while True:
             send_string(active_storages[i][0], path)
 
             if b:
-                send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
                 b = False
-            else:
-                active_storages[i][0].recv(BUFFER_SIZE)
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
 
             send_file(active_storages[i][0])
 
             if c:
-                send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
                 c = False
-            else:
-                active_storages[i][0].recv(BUFFER_SIZE)
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
 
         file_create(work_dir, path)
 
@@ -312,65 +328,107 @@ while True:
             send_string(active_storages[i][0], command)
             send_string(active_storages[i][0], path)
             if b:
-                send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
                 b = False
-            else:
-                active_storages[i][0].recv(BUFFER_SIZE)
-            active_storages[i][0].recv(BUFFER_SIZE)
-        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
+            # active_storages[i][0].recv(BUFFER_SIZE)
+        # send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
         print('done')
 
     elif command == 'file_info':
         path = receive_str(conn)
-        send_string(sns, path)
-        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
-        info = receive_str(sns)
-        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
-        send_string(conn, info)
-        print('done')
+        active = active_storages[list(active_storages.keys())[0]][0]
+        send_string(active, command)
+        send_string(active, path)
+        # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+
+        kek = receive_str(active)
+        # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+
+        send_string(conn, kek)
 
     elif command == 'file_copy':
+
         paths = receive_str(conn)
+
+        active = active_storages[list(active_storages.keys())[0]][0]
+        b = True
+        c = True
+        for i in active_storages.keys():
+            send_string(active_storages[i][0], command)
+            send_string(active_storages[i][0], paths)
+
+            if b:
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                b = False
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
+
         path = paths.split('||')
+
         file_copy(work_dir, path[0], path[1])
-        send_string(sns, command)
-        send_string(sns, paths)
-        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
-        print('done')
 
     elif command == 'file_move':
         paths = receive_str(conn)
+
+        active = active_storages[list(active_storages.keys())[0]][0]
+        b = True
+        c = True
+        for i in active_storages.keys():
+            send_string(active_storages[i][0], command)
+            send_string(active_storages[i][0], paths)
+
+            if b:
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                b = False
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
+
         path = paths.split('||')
+
         file_move(work_dir, path[0], path[1])
-        send_string(sns, command)
-        send_string(sns, paths)
-        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
-        print('done')
 
     elif command == 'open_directory':
         path = receive_str(conn)
         print('done')
+
     elif command == 'read_directory':
         path = receive_str(conn)
         direct = work_dir.get_directory(path)
         send_string(conn, direct)
         print('done')
+
     elif command == 'make_directory':
         path = receive_str(conn)
-        work_dir.add_directory_to_path(path)
-        send_string(sns, command)
-        send_string(sns, path)
-        send_response(int.from_bytes(sns.recv(BUFFER_SIZE), byteorder='big'), conn)
-        print('done')
+        directory_create(work_dir, path)
+        active = active_storages[list(active_storages.keys())[0]][0]
+        b = True
+        for i in active_storages.keys():
+            send_string(active_storages[i][0], command)
+            send_string(active_storages[i][0], path)
+            if b:
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                b = False
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
     elif command == 'delete_directory':
         path = receive_str(conn)
-        work_dir.remove_from_path(path)
-        send_string(sns, command)
-        send_string(sns, path)
-        print('done')
+        active = active_storages[list(active_storages.keys())[0]][0]
+        directory_delete(work_dir,path)
+        b = True
+        for i in active_storages.keys():
+            send_string(active_storages[i][0], command)
+            send_string(active_storages[i][0], path)
+            if b:
+                # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
+                b = False
+            # else:
+            # active_storages[i][0].recv(BUFFER_SIZE)
     elif command == 'time_to_die':
         conn.close()
-        send_string(sns, command)
+        for i in active_storages.keys():
+            send_string(active_storages[i][0], command)
 
     str_from_client = 'file_create||/a.txt||'
     # TODO Do operations on dir tree
