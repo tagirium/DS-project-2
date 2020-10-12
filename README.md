@@ -1,6 +1,7 @@
 # DS-project-2
 
 GitHub [repository](https://github.com/tagirium/DS-project-2)
+DockerHub [image of storage server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-storage) [image of naming server](https://hub.docker.com/repository/docker/tagirium/ds-project-2-naming)
 
 ## Contents
 
