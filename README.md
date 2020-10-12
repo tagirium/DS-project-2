@@ -59,17 +59,17 @@ The task is to create Distributed File System. DFS have to support file reading,
 2. Start client.py
 3. Type _init_
 3. Type in one of the following commands:
-* file_create and then on a new line full path with a desired name and extension of the file
-* file_read and then on a new line full path of the file
-* file_write and then full path of the file you will send and full path of the location of the file on a server (both on new lines)
-* file_delete and then on a new line full path of the file
-* file_info and then on a new line full path of the file
-* file_copy and then full path of the file current location and full path of the location of the copied file(both on new lines)
-* file_move and then full path of the file current location and full path of the new location of the file(both on new lines)
-* dir_read and then on a new line full path of the directory
-* dir_make and then on a new line full path of the new directory with its name
-* dir_delete and then on a new line full path of the directory
-* quit
+* _file_create_ and then on a new line full path with a desired name and extension of the file
+* _file_read_ and then on a new line full path of the file
+* _file_write_ and then full path of the file you will send and full path of the location of the file on a server (both on new lines)
+* _file_delete_ and then on a new line full path of the file
+* _file_info_ and then on a new line full path of the file
+* _file_copy_ and then full path of the file current location and full path of the location of the copied file(both on new lines)
+* _file_move_ and then full path of the file current location and full path of the new location of the file(both on new lines)
+* _dir_read_ and then on a new line full path of the directory
+* _dir_make_ and then on a new line full path of the new directory with its name
+* _dir_delete_ and then on a new line full path of the directory
+* _quit_
 
 
 ## Output
