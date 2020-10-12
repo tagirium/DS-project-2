@@ -55,7 +55,21 @@ The task is to create Distributed File System. DFS have to support file reading,
 * 18.193.5.107 - Storage Server
 
 ## How to Run
-
+1. Change NAMING_SERVER_IP field in client.py to the ip of the Naming server
+2. Start client.py
+3. Type _init_
+3. Type in one of the following commands:
+* file_create and then on a new line full path with a desired name and extension of the file
+* file_read and then on a new line full path of the file
+* file_write and then full path of the file you will send and full path of the location of the file on a server (both on new lines)
+* file_delete and then on a new line full path of the file
+* file_info and then on a new line full path of the file
+* file_copy and then full path of the file current location and full path of the location of the copied file(both on new lines)
+* file_move and then full path of the file current location and full path of the new location of the file(both on new lines)
+* dir_read and then on a new line full path of the directory
+* dir_make and then on a new line full path of the new directory with its name
+* dir_delete and then on a new line full path of the directory
+* quit
 
 
 ## Output
