@@ -3,7 +3,7 @@ import os
 from threading import Thread
 import time
 
-BUFFER_SIZE = 32
+BUFFER_SIZE = 2048
 INITIAL_SIZE = 1024
 NAMING_SERVER_IP = "localhost"
 STORAGE_SERVER_PORT = 8801
@@ -51,9 +51,10 @@ class Directory(object):
         dir = self
         if depth == 0:
             dir.add_child(File(name))
-            return
+
         for i in range(depth):
             dir = dir.find_by_name(dirs[i + 1])
+            print(name)
         dir.add_child(File(name))
 
     def add_directory_to_path(self, path):
@@ -115,7 +116,7 @@ class Directory(object):
         contents = ''
         dir = self.get_from_path(path)
         for i in range(len(dir.list)):
-            contents = contents + dir.list[i].name + '/'
+            contents = contents + ' ' + dir.list[i].name
         return contents
 
     def go_to_root(self):
@@ -141,6 +142,7 @@ def file_create(root: Directory, path):
     root.add_file_to_path(path)
     return
 
+
 def directory_create(root: Directory, path):
     root.add_directory_to_path(path)
     return
@@ -150,21 +152,18 @@ def file_delete(root: Directory, path):
     root.remove_from_path(path)
     return
 
+
 def directory_delete(root: Directory, path):
     root.remove_from_path(path)
     return
 
 
 def file_copy(root: Directory, path1, path2):
-    name = root.get_from_path(path1).name
-    path2 = path2 + '/' + name
     root.add_file_to_path(path2)
 
 
 def file_move(root: Directory, path1, path2):
-    name = root.get_from_path(path1).name
     root.remove_from_path(path1)
-    path2 = path2 + '/' + name
     root.add_file_to_path(path2)
 
 
@@ -193,28 +192,35 @@ def receive_str(conn):
     return string
 
 
-def receive_file(conn):
-    text_file = os.getcwd() + '/file' # path
+def receive_file(conn, size):
+    text_file = 'file'  # path
     # Receive, output and save file
-    with open(text_file, "wb") as fw:
-        while True:
-            data = conn.recv(1)
-            if not data:
-                break
-            fw.write(data)
+    fw = open(text_file, "wb")
+    kek = ''
+    for i in range(size):
+        data = conn.recv(1)
+        fw.write(data)
+        fw.flush()
+    fw.close()
+
+
+def send_file(conn):
+    path = 'file'
+
+    if os.path.exists(path):
+        with open(path, 'rb') as fa:
+            num_of_blocks = os.stat(path).st_size // BUFFER_SIZE
+            for i in range(num_of_blocks):
+                data = fa.read(BUFFER_SIZE)
+                conn.send(data)
+            final_data = fa.read(os.stat(path).st_size - num_of_blocks * BUFFER_SIZE)
+            conn.send(final_data)
+    time.sleep(1)
 
 
 def send_string(ns, string):
     ns.send(string.encode())
-
-
-def send_file(conn):
-    if os.path.exists(os.getcwd() + '/file'):
-        with open(path, 'ab+') as fa:
-            l = fa.read(1)
-            while l:
-                conn.send(l)
-                l = fa.read(1)
+    time.sleep(1)
 
 
 active_storages = {'192.168.43.85': []}
@@ -286,15 +292,17 @@ while True:
         send_string(active, command)
         send_string(active, path)
         # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
-
-        receive_file(active)
+        size = receive_str(active)
+        receive_file(active, int(size))
+        send_string(conn, size)
         # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
 
         send_file(conn)
 
     elif command == 'file_write':
         path = receive_str(conn)
-        receive_file(conn)
+        size = receive_str(conn)
+        receive_file(conn, int(size))
 
         active = active_storages[list(active_storages.keys())[0]][0]
         b = True
@@ -302,6 +310,7 @@ while True:
         for i in active_storages.keys():
             send_string(active_storages[i][0], command)
             send_string(active_storages[i][0], path)
+            send_string(active_storages[i][0], size)
 
             if b:
                 # send_response(int.from_bytes(active.recv(BUFFER_SIZE), byteorder='big'), conn)
@@ -393,13 +402,13 @@ while True:
         path = receive_str(conn)
         print('done')
 
-    elif command == 'read_directory':
+    elif command == 'dir_read':
         path = receive_str(conn)
         direct = work_dir.get_directory(path)
         send_string(conn, direct)
         print('done')
 
-    elif command == 'make_directory':
+    elif command == 'dir_make':
         path = receive_str(conn)
         directory_create(work_dir, path)
         active = active_storages[list(active_storages.keys())[0]][0]
@@ -412,10 +421,10 @@ while True:
                 b = False
             # else:
             # active_storages[i][0].recv(BUFFER_SIZE)
-    elif command == 'delete_directory':
+    elif command == 'dir_delete':
         path = receive_str(conn)
         active = active_storages[list(active_storages.keys())[0]][0]
-        directory_delete(work_dir,path)
+        directory_delete(work_dir, path)
         b = True
         for i in active_storages.keys():
             send_string(active_storages[i][0], command)
@@ -427,9 +436,13 @@ while True:
             # active_storages[i][0].recv(BUFFER_SIZE)
     elif command == 'time_to_die':
         conn.close()
-        for i in active_storages.keys():
-            send_string(active_storages[i][0], command)
+        # for i in active_storages.keys():
+        #   send_string(active_storages[i][0], command)
 
-    str_from_client = 'file_create||/a.txt||'
+    try:
+        os.remove('file')
+    except:
+        pass
+
     # TODO Do operations on dir tree
     # TODO Send instructions and files to storage servers
