@@ -74,6 +74,11 @@ The task is to create Distributed File System. DFS have to support file reading,
 
 ## Output
 
+![output1](https://github.com/tagirium/DS-project-2/blob/main/output1.png)
+
+![output2](https://github.com/tagirium/DS-project-2/blob/main/output2.png)
+
+
 
 
 ## References
