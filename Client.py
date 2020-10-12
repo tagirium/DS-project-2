@@ -79,7 +79,6 @@ while True:
     elif command == 'file_read':
         print("Enter path: ")
         path = input()
-        # print(path.split('/')[len(path.split())])
         send(command, path)
         filename = os.getcwd() + '/' + path.split('/')[len(path.split())]
         receive_file(s, filename)
