@@ -42,8 +42,13 @@ The task is to create Distributed File System. DFS have to support file reading,
 ![diagram](https://github.com/tagirium/DS-project-2/blob/main/diagram.png)
 
 ## AWS Deployment
-*1. Create instance, assign elastic IPs to avoid changes of IP after rebooting
-*2. Write IPs of your StorageServers in **active_storages** dictionary and in **storages** list (*the format in dictionary - 'IP':[]) 
+**1.** Create instance, assign elastic IPs to avoid changes of IP after rebooting
+**2.** Write IPs of your StorageServers in **active_storages** dictionary and in **storages** list (the format in dictionary - 'IP' : [ ]) 
+**3.** Then update your OS on instance and install docker engine. More detailed instructions are [here](https://docs.docker.com/engine/install/ubuntu/)
+**4.** Then run images by running the following code in command console **firstly, for all storages, then for naming server**:
+For storages: ''' sudo docker run -it -p 8801:8801 tagirium/ds-project-2-storage
+For naming server: ''' sudo docker run -it -p 8800:8800 tagirium/ds-project-2-naming
+
 ### Prerequisites
 * Ubuntu 20.04
 * 18.156.127.12 - Name server
