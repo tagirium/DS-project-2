@@ -30,18 +30,14 @@ Client implementation, report
 
 * **Tagir Shigapov BS18-SE-01**
 
-Storage Server implementation
+Storage Server implementation, creation Docker Images
 
 
 ## The Problem
 
 The task is to create Distributed File System. DFS have to support file reading, writing, creation, deletion, copy, moving and info queries. It should also support certain directory operations - listing, creation, changing and deletion. Files must be replicated on multiple storage servers.
 
-## The Solution
-
-
-
-## Conclusion
+## AWS Deploymen
 
 
 
