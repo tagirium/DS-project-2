@@ -147,4 +147,5 @@ while True:
     if quit_cmd == 'quit':
         ttd = 'time_to_die'
         s.send(ttd.encode())
+        s.close()
         break

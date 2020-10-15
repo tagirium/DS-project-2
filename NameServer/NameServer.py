@@ -169,7 +169,8 @@ def file_move(root: Directory, path1, path2):
 
 def establish_connection(port):
     ns = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ns.bind(('192.168.43.117', port))
+    ns.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    ns.bind(('', port))
     ns.listen()
     (conn, address) = ns.accept()
     return conn, ns
@@ -223,8 +224,8 @@ def send_string(ns, string):
     time.sleep(1)
 
 
-active_storages = {'192.168.43.85': []}
-storages = ['192.168.43.85']
+active_storages = {'18.193.5.107': [], '18.158.242.29': []}
+storages = ['18.193.5.107', '18.158.242.29']
 
 j = 0
 sns = []
@@ -436,6 +437,8 @@ while True:
             # active_storages[i][0].recv(BUFFER_SIZE)
     elif command == 'time_to_die':
         conn.close()
+        sock.close()
+        conn, sock = establish_connection(8080)
         # for i in active_storages.keys():
         #   send_string(active_storages[i][0], command)
 

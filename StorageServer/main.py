@@ -110,7 +110,7 @@ class StorageServer:
 
     def establish_connection(self):
         ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ss.bind(('192.168.43.85', STORAGE_SERVER_PORT))
+        ss.bind(('', STORAGE_SERVER_PORT))
         ss.listen()
         (conn, address) = ss.accept()
         print('connection established, address is', address)
